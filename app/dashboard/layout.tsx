@@ -1,7 +1,18 @@
-// app/dashboard/layout.tsx
-import { ReactNode } from 'react';
-
+'use client';
+import { ReactNode, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useRouter } from 'next/navigation';
 export default function DashboardLayout({ children }: { children: ReactNode }) {
+  const router = useRouter();
+  const { user } = useAuth();
+  useEffect(() => {
+    // This effect runs when the component mounts
+    console.log(user);
+    if (!user) {
+      // Redirect to login if user is not authenticated
+      router.push('/login');
+    }
+  }, []);
   return (
     <div className="flex min-h-screen">
       <aside className="w-64 bg-gray-800 text-white p-4">
