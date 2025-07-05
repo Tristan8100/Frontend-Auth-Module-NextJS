@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { useRouter } from "next/navigation";
-
+import { api } from '@/lib/api'; // Your existing Axios instance
 type User = {
   name: string;
   email: string;
@@ -23,6 +23,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     // Check for token and verify user on initial load
+    console.log("Checking user authenticationnnnn...");
     const token = localStorage.getItem("token");
     if (!token) {
       setIsReady(true);
@@ -30,23 +31,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     const verifyUser = async () => {
-      try {
-        const res = await fetch("/api/verify-user", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+    try {
+      const res = await api.get('/api/verify-user', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-        if (!res.ok) throw new Error();
-
-        const userData = await res.json();
-        setUser(userData);
-      } catch {
-        localStorage.removeItem("token");
-      } finally {
-        setIsReady(true);
-      }
-    };
+      setUser(res.data.user_info); // Axios puts response JSON under .data
+    } catch (error) {
+      console.error("Error verifying user:", error);
+      console.log(token);
+    } finally {
+      setIsReady(true);
+    }
+  };
 
     verifyUser();
   }, []);
@@ -54,6 +53,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = (user: User, token: string) => {
     setUser(user);
     localStorage.setItem("token", token);
+    console.log(token);
   };
 
   const logout = () => {

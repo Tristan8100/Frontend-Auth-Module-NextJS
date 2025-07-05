@@ -4,8 +4,11 @@ import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { api } from '@/lib/api'; // Your existing Axios instance
 import { useRouter } from 'next/navigation';
+import { Router } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function LoginPage() {
+  const {login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const router = useRouter();
@@ -15,8 +18,9 @@ export default function LoginPage() {
       api.post('/api/login', credentials).then(res => res.data),
     onSuccess: (data) => {
       if (data.token) {
-        localStorage.setItem('token', data.token);
         console.log('Login successful:', data);
+        login(data.user_info, data.token); // Call login from AuthContext
+        router.push('/dashboard'); // Redirect to dashboard on success
       }
     },
   });
