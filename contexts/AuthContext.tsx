@@ -42,6 +42,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       console.error("Error verifying user:", error);
       console.log(token);
+      expiredToken(error);
+      setUser(null);
     } finally {
       setIsReady(true);
     }
@@ -49,6 +51,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     verifyUser();
   }, []);
+
+  const expiredToken = (error: any) => {
+    if (error.response?.status === 401) {
+        console.warn("Token invalid or expired, logging out...");
+        localStorage.removeItem("token");
+        window.location.href = "/login"; // or use router.push if you're in a component
+      }
+  }
 
   const login = (user: User, token: string) => {
     setUser(user);
