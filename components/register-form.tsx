@@ -1,3 +1,5 @@
+'use client';
+
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -14,78 +16,51 @@ import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useRouter } from 'next/navigation';
-import { Router } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
-export function LoginForm({
+export function RegisterForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
-    const {login } = useAuth();
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
-    const router = useRouter();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
+  const [error, setError] = useState('');
+  const router = useRouter();
 
-    const loginMutation = useMutation({
-        mutationFn: (credentials: { email: string; password: string }) => 
-        api.post('/api/login', credentials).then(res => res.data),
-        onSuccess: (data) => {
-        if (data.token) {
-            console.log('Login successful:', data);
-            login(data.user_info, data.token); // Call login from AuthContext
-            router.push('/dashboard'); // Redirect to dashboard on success
-        }
-        },
-        onError: (error: any) => {
-            console.log('Login failed:', error);
-            if (error.response.status === 403) {
-              sendEmail.mutate({ email }); // Send OTP if login fails with 403
-              localStorage.setItem('verificationEmail', email);
-              console.log('catchh');
-              router.push('/auth/verify-otp');
-            } else if (error.response && error.response.data) {
-              const message = error.response.data.message; // ← This will be "wrong email or password"
-              console.error("Login failed:", message);
-              setError(message);
-            } else {
-              console.error("An unknown error occurred.");
-              setError("An unexpected error occurred.");
-            }
-        },
-    });
-
-    const sendEmail = useMutation({
-        mutationFn: (credentials: { email: string }) => 
-        api.post('/api/send-otp', credentials).then(res => res.data),
-        onSuccess: (data) => {
-          console.log('OTP sent successfully:', data);
-        },
-        onError: (error: any) => {
-            console.log('Login failed:', error);
-            if (error.response && error.response.data) {
-              const message = error.response.data.message; // ← This will be "wrong email or password"
-              console.error("send otp failed:", message);
-              setError(message);
-            } else {
-              console.error("An unknown error occurred.");
-              setError("An unexpected error occurred.");
-            }
-        },
-    });
+  const registerMutation = useMutation({
+    mutationFn: (credentials: { email: string; password: string; name: string }) => 
+      api.post('/api/register', credentials).then(res => res.data),
+    onSuccess: (data) => {
+      console.log('Registration successful:', data);
+      localStorage.setItem('email', email);
+      router.push('/auth/verify-email'); // change this ah
+    },
+    onError: (error: any) => {
+      console.log('Registration failed:', error);
+      if (error.response && error.response.data) {
+        const message = error.response.data.message || 
+                       error.response.data.errors?.email?.[0] || 
+                       "Registration failed";
+        setError(message);
+      } else {
+        setError("An unexpected error occurred.");
+      }
+    },
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    loginMutation.mutate({ email, password });
+    registerMutation.mutate({ email, password, name });
   };
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
         <CardHeader className="text-center">
-          <CardTitle className="text-xl">Welcome back</CardTitle>
+          <CardTitle className="text-xl">Create an account</CardTitle>
           <CardDescription>
-            Login with your Apple or Google account
+            Get started with your email and password
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -99,7 +74,7 @@ export function LoginForm({
                       fill="currentColor"
                     />
                   </svg>
-                  Login with Apple
+                  Sign up with Apple
                 </Button>
                 <Button variant="outline" className="w-full">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
@@ -108,15 +83,26 @@ export function LoginForm({
                       fill="currentColor"
                     />
                   </svg>
-                  Login with Google
+                  Sign up with Google
                 </Button>
               </div>
               <div className="after:border-border relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t">
                 <span className="bg-card text-muted-foreground relative z-10 px-2">
-                  Or continue with
+                  Or register with email
                 </span>
               </div>
               <div className="grid gap-6">
+                <div className="grid gap-3">
+                  <Label htmlFor="name">Full Name</Label>
+                  <Input
+                    id="name"
+                    type="text"
+                    placeholder="John Doe"
+                    value={name}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setName(e.target.value)}
+                    required
+                  />
+                </div>
                 <div className="grid gap-3">
                   <Label htmlFor="email">Email</Label>
                   <Input
@@ -129,19 +115,21 @@ export function LoginForm({
                   />
                 </div>
                 <div className="grid gap-3">
-                  <div className="flex items-center">
-                    <Label htmlFor="password">Password</Label>
-                    <a
-                      href="#"
-                      className="ml-auto text-sm underline-offset-4 hover:underline"
-                    >
-                      Forgot your password?
-                    </a>
-                  </div>
-                  <Input id="password" type="password" value={password} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)} required />
+                  <Label htmlFor="password">Password</Label>
+                  <Input 
+                    id="password" 
+                    type="password" 
+                    value={password} 
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)} 
+                    required 
+                  />
                 </div>
-                <Button type="submit" className="w-full">
-                  Login
+                <Button 
+                  type="submit" 
+                  className="w-full"
+                  disabled={registerMutation.isPending}
+                >
+                  {registerMutation.isPending ? "Creating account..." : "Create account"}
                 </Button>
               </div>
               {error && (
@@ -150,9 +138,9 @@ export function LoginForm({
                 </div>
               )}
               <div className="text-center text-sm">
-                Don&apos;t have an account?{" "}
-                <a href="#" className="underline underline-offset-4">
-                  Sign up
+                Already have an account?{" "}
+                <a href="/login" className="underline underline-offset-4">
+                  Sign in
                 </a>
               </div>
             </div>
@@ -164,5 +152,5 @@ export function LoginForm({
         and <a href="#">Privacy Policy</a>.
       </div>
     </div>
-  )
+  );
 }

@@ -1,10 +1,10 @@
 'use client';
-
+import { ReactNode, useEffect } from 'react';
 import { LoginForm } from "@/components/login-form";
 import LoginPageTrial from "@/components/trial/login";
 import { GalleryVerticalEnd } from "lucide-react"
 
-export default function LoginPage() {
+export default function AuthLayout({ children }: { children: ReactNode }) {
   
 
   return (
@@ -16,7 +16,7 @@ export default function LoginPage() {
           </div>
           Acme Inc.
         </a>
-        <LoginForm />
+        {children}
       </div>
     </div>
   );
